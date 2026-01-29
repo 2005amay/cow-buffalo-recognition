@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bovine Breed Identifier | AI Powered</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fa-solid fa-cow"></i> BovineID
+            </div>
+            <h1>Breed Recognition System</h1>
+            <p class="subtitle">Upload an image of a cow or buffalo to identify its breed instantly.</p>
+        </header>
+
+        <main>
+            <div class="upload-container" id="upload-area">
+                <div class="upload-content">
+                    <div class="icon-wrapper">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Drag & Drop Image Here</h3>
+                    <p>or <span class="browse-btn">Browse Files</span></p>
+                    <input type="file" id="file-input" accept="image/*" hidden>
+                </div>
+                <div class="preview-container" id="preview-container" style="display: none;">
+                    <img id="image-preview" src="" alt="Preview">
+                    <button class="remove-btn" id="remove-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <button id="analyze-btn" class="primary-btn" disabled>
+                <span class="btn-text">Analyze Breed</span>
+                <span class="loader" style="display: none;"></span>
+            </button>
+
+            <div class="result-container" id="result-container" style="display: none;">
+                <div class="result-header">
+                    <h2>Analysis Result</h2>
+                    <span class="badge" id="demo-badge" style="display: none;">DEMO MODE</span>
+                </div>
+                <div class="result-card">
+                    <div class="breed-info">
+                        <span class="label">Identified Breed</span>
+                        <h3 id="breed-name">Loading...</h3>
+                    </div>
+                    <div class="confidence-section">
+                        <div class="confidence-header">
+                            <span>Confidence Score</span>
+                            <span id="confidence-value">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <p id="demo-message" class="info-text" style="display: none;"></p>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 BovineID System. Powered by TensorFlow & Flask.</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
