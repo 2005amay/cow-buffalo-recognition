@@ -1,0 +1,46 @@
+{
+    "dataset_dir": "D:\\project k2\\dataset",
+    "model_path": "D:\\project k2\\model\\model.keras",
+    "train_samples": 3347,
+    "validation_samples": 831,
+    "class_map": {
+        "0": "Amritmahal",
+        "1": "Gir",
+        "2": "Hariana",
+        "3": "Holstein friesn",
+        "4": "Jersey",
+        "5": "Kankrej",
+        "6": "Ongole",
+        "7": "Red sindhi",
+        "8": "Sahiwal",
+        "9": "Tharparkar"
+    },
+    "class_counts": [
+        196,
+        353,
+        206,
+        424,
+        319,
+        254,
+        244,
+        211,
+        773,
+        367
+    ],
+    "class_weights": {
+        "0": 1.7076530612244898,
+        "1": 0.9481586402266289,
+        "2": 1.6247572815533982,
+        "3": 0.7893867924528302,
+        "4": 1.049216300940439,
+        "5": 1.3177165354330709,
+        "6": 1.3717213114754099,
+        "7": 1.586255924170616,
+        "8": 0.4329883570504528,
+        "9": 0.9119891008174387
+    },
+    "best_val_accuracy": 0.7388688325881958,
+    "best_val_top_3_accuracy": 0.9386281371116638,
+    "best_val_loss": 1.1546660661697388,
+    "epochs_completed": 30
+}

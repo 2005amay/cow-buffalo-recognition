@@ -1,76 +1,134 @@
-import os
 import json
-import random
-import tensorflow as tf
+import os
+
 import numpy as np
+import tensorflow as tf
 from PIL import Image
 
-# Load class names
-CLASSES_PATH = os.path.join(os.path.dirname(__file__), 'classes.json')
-with open(CLASSES_PATH, 'r') as f:
-    CLASSES = json.load(f)
+MODEL_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(MODEL_DIR)
+CLASSES_PATH = os.path.join(MODEL_DIR, "classes.json")
+MODEL_PATHS = [
+    os.path.join(MODEL_DIR, "model.keras"),
+    os.path.join(MODEL_DIR, "model.h5"),
+]
+IMG_SIZE = (224, 224)
+TOP_K = 3
+CLASSES = {}
+CLASSES_MTIME = None
+model = None
+MODEL_MTIME = None
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), 'model.h5')
+
+def load_classes():
+    if os.path.exists(CLASSES_PATH):
+        with open(CLASSES_PATH, "r", encoding="utf-8") as file:
+            return json.load(file)
+
+    dataset_dir = os.path.join(PROJECT_ROOT, "dataset")
+    if os.path.isdir(dataset_dir):
+        class_names = sorted(
+            name for name in os.listdir(dataset_dir)
+            if os.path.isdir(os.path.join(dataset_dir, name))
+        )
+        return {str(index): name for index, name in enumerate(class_names)}
+
+    return {}
+
 
 def load_model():
-    if os.path.exists(MODEL_PATH):
-        try:
-            return tf.keras.models.load_model(MODEL_PATH)
-        except Exception as e:
-            print(f"Error loading model: {e}")
-            return None
+    for model_path in MODEL_PATHS:
+        if os.path.exists(model_path):
+            try:
+                return tf.keras.models.load_model(model_path)
+            except Exception as error:
+                print(f"Error loading model '{model_path}': {error}")
     return None
 
-model = load_model()
+
+def get_classes():
+    global CLASSES, CLASSES_MTIME
+
+    current_mtime = os.path.getmtime(CLASSES_PATH) if os.path.exists(CLASSES_PATH) else None
+    if CLASSES and CLASSES_MTIME == current_mtime:
+        return CLASSES
+
+    CLASSES = load_classes()
+    CLASSES_MTIME = current_mtime
+    return CLASSES
+
+
+def get_model():
+    global model, MODEL_MTIME
+
+    latest_path = next((path for path in MODEL_PATHS if os.path.exists(path)), None)
+    current_mtime = os.path.getmtime(latest_path) if latest_path else None
+
+    if model is not None and MODEL_MTIME == current_mtime:
+        return model
+
+    model = load_model()
+    MODEL_MTIME = current_mtime
+    return model
+
 
 def preprocess_image(image_path):
-    img = Image.open(image_path).convert('RGB')
-    img = img.resize((224, 224))
+    img = Image.open(image_path).convert("RGB")
+    img = img.resize(IMG_SIZE)
     img_array = np.array(img)
     img_array = np.expand_dims(img_array, axis=0)
     img_array = tf.keras.applications.efficientnet.preprocess_input(img_array)
     return img_array
 
-def predict_breed(image_path):
-    global model
-    
-    # Reload model if it appeared (e.g. after training)
-    if model is None:
-        model = load_model()
 
-    if model:
-        # Real prediction
+def build_top_predictions(probabilities, classes):
+    top_indices = np.argsort(probabilities)[::-1][:TOP_K]
+    return [
+        {
+            "breed": classes.get(str(index), f"Class {index}"),
+            "confidence": float(probabilities[index]),
+        }
+        for index in top_indices
+    ]
+
+
+def predict_breed(image_path):
+    classes = get_classes()
+    active_model = get_model()
+
+    if not classes:
+        return {
+            "breed": "Model unavailable",
+            "confidence": 0.0,
+            "is_demo": True,
+            "message": "No class metadata was found. Train the model again to regenerate model/classes.json.",
+        }
+
+    if active_model:
         try:
             processed_img = preprocess_image(image_path)
-            predictions = model.predict(processed_img)
-            predicted_class_index = np.argmax(predictions[0])
-            confidence = float(np.max(predictions[0]))
-            
-            breed_name = CLASSES.get(str(predicted_class_index), "Unknown")
-            
-            return {
-                'breed': breed_name,
-                'confidence': confidence,
-                'is_demo': False
-            }
-        except Exception as e:
-            print(f"Prediction error: {e}")
-            # Fallback to demo if prediction fails
-            pass
+            predictions = active_model.predict(processed_img, verbose=0)[0]
+            predicted_class_index = int(np.argmax(predictions))
+            confidence = float(np.max(predictions))
+            breed_name = classes.get(str(predicted_class_index), "Unknown")
 
-    # Demo mode (Simulated)
-    # In a real scenario, we would strictly fail, but for this demo request
-    # we simulate a result if the model isn't trained yet.
-    print("Model not found or failed. Using DEMO mode.")
-    
-    # Simulate a random breed for demonstration
-    random_index = str(random.randint(0, len(CLASSES) - 1))
-    breed_name = CLASSES[random_index]
-    confidence = random.uniform(0.85, 0.99)
-    
+            return {
+                "breed": breed_name,
+                "confidence": confidence,
+                "is_demo": False,
+                "top_predictions": build_top_predictions(predictions, classes),
+            }
+        except Exception as error:
+            return {
+                "breed": "Prediction failed",
+                "confidence": 0.0,
+                "is_demo": True,
+                "message": f"Prediction failed: {error}",
+            }
+
     return {
-        'breed': breed_name,
-        'confidence': confidence,
-        'is_demo': True,
-        'message': 'Running in DEMO mode. Train the model to get real predictions.'
+        "breed": "Model unavailable",
+        "confidence": 0.0,
+        "is_demo": True,
+        "message": "No trained model was found. Train the model to get real predictions.",
     }

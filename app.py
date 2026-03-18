@@ -32,18 +32,16 @@ def predict():
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        
+
         try:
-            # Get prediction
+            file.save(filepath)
             result = predict_breed(filepath)
-            
-            # Clean up uploaded file
-            os.remove(filepath)
-            
             return jsonify(result)
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+        finally:
+            if os.path.exists(filepath):
+                os.remove(filepath)
     
     return jsonify({'error': 'Invalid file type'}), 400
 
